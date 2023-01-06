@@ -49,9 +49,9 @@ class SchemaGenerator():
 
         self.schemas = {}
     
-    def new_schema(self, method: str, *fields: List[Union[Remove, BaseSchema, Type]]) -> Type[BaseSchema]:
+    def new_schema(self, method: str, *fields: List[Union[Remove, BaseSchema, Type]], verifiers = {}) -> Type[BaseSchema]:
 
-        Schema: Type[BaseSchema] = type(self.name+method, (BaseSchema,), {"_name": self.name, "_method": method, "_config_attributes": self.schema_attributes.Config, "_orm_model": PrivateAttr(self.base_model)})
+        Schema: Type[BaseSchema] = type(self.name+method, (BaseSchema,), {"_name": self.name, "_method": method, "_verifiers": verifiers, "_config_attributes": self.schema_attributes.Config, "_orm_model": PrivateAttr(self.base_model)})
 
         for field in fields:
             if not isinstance(field, R):

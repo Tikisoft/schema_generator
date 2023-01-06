@@ -7,15 +7,24 @@ class User(SchemaAttributes):
     email = T(str)
     firstname = T(str)
     lastname = T(str)
+    location_id = T(int)
     posts = T(List["Post"]) # Specifying a string will allow a different schema to be used depending on the schema the attribute is in.
                             # For example, in the UserPatch schema, the PostPatch schema will be used (and therefore in this case the attribute 'posts' will be equal to List[PostPatch])
+    location = T("Location")
+
+class Verifiers:
+    def location_or_location_id(value, values):  
+        if "location" not in values and "location_id" not in values:
+            raise Exception("You must specify location or location_id !")
+        return value
 
 class UserSchemas:
     generator = SchemaGenerator(UserModel, User, "User")
 
     CREATE = generator.new_schema(
         "Create",
-        User.ALL, R(User.id) # .ALL retrieve all the attributes and the R(User.ENTITIES) allows to delete the attributes which are linked to other schemas
+        User.ALL, O(User.location, User.location_id), R(User.id), # .ALL retrieve all the attributes and the R(User.ENTITIES) allows to delete the attributes which are linked to other schemas
+        verifiers={"location": [Verifiers.location_or_location_id]}
     )
 
     PATCH = generator.new_schema(
