@@ -8,7 +8,7 @@ from .schema_generator import Remove as Remove
 from .schema_generator import SchemaGenerator as SchemaGenerator
 from .viewer.generate import generate_html as generate_html
 from .converter.convert import convert_files as convert_files
-from .checkers import *
+from .verifiers import *
 
 __all__ = [
     "BaseSchema",
@@ -21,5 +21,5 @@ __all__ = [
     "SchemaGenerator",
     "generate_html",
     "convert_files",
-    "checkers"
+    "verifiers"
 ]

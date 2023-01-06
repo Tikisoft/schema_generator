@@ -8,10 +8,10 @@ def one_of(*attributes: List[Union[str, Type[TypeVar]]]):
             continue
         final_attributes.append(attr)
 
-    def checker(value, values):
+    def verifier(value, values):
         for attr in final_attributes:
             if attr in values:
                 return value
         raise Exception("You must specify one of these attributes: " + ", ".join(final_attributes) + " !")
 
-    return checker
+    return verifier

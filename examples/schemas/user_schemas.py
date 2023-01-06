@@ -1,7 +1,7 @@
 from typing import List
 from schema_generator import SchemaGenerator, R, O, SchemaAttributes, T
 from models.user_model import User as UserModel
-from schema_generator.checkers import one_of
+from schema_generator.verifiers import one_of
 
 class User(SchemaAttributes):
     id = T(int)
