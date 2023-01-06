@@ -1,6 +1,7 @@
 from typing import List
 from schema_generator import SchemaGenerator, R, O, SchemaAttributes, T
 from models.user_model import User as UserModel
+from schema_generator.checkers import one_of
 
 class User(SchemaAttributes):
     id = T(int)
@@ -12,19 +13,13 @@ class User(SchemaAttributes):
                             # For example, in the UserPatch schema, the PostPatch schema will be used (and therefore in this case the attribute 'posts' will be equal to List[PostPatch])
     location = T("Location")
 
-class Verifiers:
-    def location_or_location_id(value, values):  
-        if "location" not in values and "location_id" not in values:
-            raise Exception("You must specify location or location_id !")
-        return value
-
 class UserSchemas:
     generator = SchemaGenerator(UserModel, User, "User")
 
     CREATE = generator.new_schema(
         "Create",
         User.ALL, O(User.location, User.location_id), R(User.id), # .ALL retrieve all the attributes and the R(User.ENTITIES) allows to delete the attributes which are linked to other schemas
-        verifiers={"location": [Verifiers.location_or_location_id]}
+        verifiers={"*": [one_of(User.location, User.location_id)]} # Verifiers are used to validate attributes (it can also be '*' if you don't need a specific attribute)
     )
 
     PATCH = generator.new_schema(

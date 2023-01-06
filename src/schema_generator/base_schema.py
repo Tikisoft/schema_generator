@@ -28,6 +28,8 @@ class BaseSchema(ORMBaseSchema):
     def __init__(self, **data):
         for attr in self._verifiers:
             for verifier in self._verifiers[attr]:
+                if isinstance(attr, TypeVar):
+                    attr = attr.__name__
                 res = verifier(data[attr] if attr in data else None, data)
                 if attr in data:
                     data[attr] = res
