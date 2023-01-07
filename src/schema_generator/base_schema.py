@@ -30,7 +30,7 @@ class BaseSchema(ORMBaseSchema):
             for verifier in self._verifiers[attr]:
                 if isinstance(attr, TypeVar):
                     attr = attr.__name__
-                res = verifier(data[attr] if attr in data else None, data)
+                res = verifier(data[attr] if attr in data else None, data, self.__class__)
                 if attr in data:
                     data[attr] = res
 
