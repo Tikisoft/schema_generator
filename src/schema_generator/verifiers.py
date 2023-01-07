@@ -12,6 +12,6 @@ def one_of(*attributes: List[Union[str, Type[TypeVar]]]):
         for attr in final_attributes:
             if attr in values:
                 return value
-        raise Exception("You must specify one of these attributes: " + ", ".join(final_attributes) + " !")
+        raise Exception("You must specify one of these attributes: " + ", ".join(final_attributes) + " ! (" + values + ")")
 
     return verifier
