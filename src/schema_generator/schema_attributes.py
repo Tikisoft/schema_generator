@@ -1,7 +1,7 @@
 from typing import List, Type, TypeVar
 import types
 from .utils import get_inner
-from . import T
+from .t import T
 
 class SchemaAttributes:
     """
