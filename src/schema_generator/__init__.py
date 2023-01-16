@@ -1,6 +1,6 @@
 from .base_schema import BaseSchema as BaseSchema
 from .schema_attributes import SchemaAttributes as SchemaAttributes
-from .schema_attributes import T as T
+from .t import T as T
 from .schema_generator import O as O
 from .schema_generator import Optional_ as Optional_
 from .schema_generator import R as R

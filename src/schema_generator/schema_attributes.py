@@ -1,10 +1,7 @@
 from typing import List, Type, TypeVar
 import types
 from .utils import get_inner
-
-class T:
-    def __init__(self, type_: Type) -> None:
-        self.type = type_
+from . import T
 
 class SchemaAttributes:
     """

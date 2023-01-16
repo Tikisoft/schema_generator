@@ -1,7 +1,8 @@
-from typing import List, Union, Type, TypeVar
+from typing import Union, TypeVar
+from . import T
 import re
 
-def one_of(*attributes: List[Union[str, Type[TypeVar]]]):
+def one_of(*attributes: Union[str, T]):
     final_attributes = []
     for attr in attributes:
         if isinstance(attr, TypeVar):
