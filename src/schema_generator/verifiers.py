@@ -1,5 +1,5 @@
 from typing import Union, TypeVar
-from . import T
+from .t import T
 import re
 
 def one_of(*attributes: Union[str, T]):
