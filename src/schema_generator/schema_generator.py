@@ -2,19 +2,31 @@ from pydantic import PrivateAttr
 from typing import Optional, Type, TypeVar, List, Union
 from .base_schema import BaseSchema
 from .schema_attributes import SchemaAttributes
+from .t import T
 from sqlalchemy.orm import declarative_base
 
-def Optional_(*fields: List[Union[Type, BaseSchema, list]]) -> Optional[TypeVar]:
+def Optional_(*fields: Union[T, List[Type], Type[BaseSchema]]) -> Optional[TypeVar]:
     """Turn fields into Optional fields"""
     if len(fields) == 0:
         return []
         
     new_fields = []
     for f in fields:
+        #If 'f' is a schema
         if isinstance(f, type) and issubclass(f, BaseSchema):
-            new_fields.extend(Optional_(*f.__fields))
+            #We retrieve the fields of the schema and make them optional
+            schema_fields = Optional_(*f.__fields)
+            if isinstance(schema_fields, list):
+                new_fields.extend(schema_fields)
+            else:
+                new_fields.append(schema_fields)
+        
         elif isinstance(f, list):
-            new_fields.extend(Optional_(*f))
+            normal_fields = Optional_(*f)
+            if isinstance(normal_fields, list):
+                new_fields.extend(normal_fields)
+            else:
+                new_fields.append(normal_fields)
         else:
             new_fields.append(TypeVar(f"{f.__name__}", bound=Optional[f.__bound__]))
 
@@ -27,7 +39,7 @@ O = Optional_
 
 class Remove:
     """Remove fields from the schema"""
-    def __init__(self, *fields: List[Union[Type, BaseSchema, list]]) -> None:
+    def __init__(self, *fields: Union[T, List[Type], Type[BaseSchema]]) -> None:
         self.fields = fields
 
 #Alias for Remove
@@ -49,9 +61,9 @@ class SchemaGenerator():
 
         self.schemas = {}
     
-    def new_schema(self, method: str, *fields: List[Union[Remove, BaseSchema, Type]]) -> Type[BaseSchema]:
+    def new_schema(self, method: str, *fields: Union[Remove, BaseSchema, T, List[Type], Type[BaseSchema], TypeVar], verifiers = {}) -> Type[BaseSchema]:
 
-        Schema: Type[BaseSchema] = type(self.name+method, (BaseSchema,), {"_name": self.name, "_method": method, "_config_attributes": self.schema_attributes.Config, "_orm_model": PrivateAttr(self.base_model)})
+        Schema: Type[BaseSchema] = type(self.name+method, (BaseSchema,), {"_name": self.name, "_method": method, "_verifiers": verifiers, "_config_attributes": self.schema_attributes.Config, "_orm_model": PrivateAttr(self.base_model)})
 
         for field in fields:
             if not isinstance(field, R):

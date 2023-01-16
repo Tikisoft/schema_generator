@@ -18,10 +18,24 @@ class BaseSchema(ORMBaseSchema):
     _method: str = None
     #Config of the schema, it contains the maping of the attributes
     _config_attributes: "SchemaAttributes.Config" = None
+    #Validators
+    _verifiers: Dict = {}
 
     class Config:
         orm_mode = True
         use_enum_values = True
+
+    def __init__(self, **data):
+        for attr in self._verifiers:
+            for verifier in self._verifiers[attr]:
+                if isinstance(attr, TypeVar):
+                    attr = attr.__name__
+                res = verifier(data[attr] if attr in data else None, data, attr, self.__class__)
+                if attr in data:
+                    data[attr] = res
+
+        super().__init__(**data)
+                
 
     def __init_subclass__(cls) -> None:
         cls.add_fields = lambda *fields: BaseSchema.__add_fields(cls, *fields)
