@@ -11,7 +11,9 @@ def Optional_(*fields: List[Union[Type, BaseSchema, list]]) -> Optional[TypeVar]
         
     new_fields = []
     for f in fields:
+        #If 'f' is a schema
         if isinstance(f, type) and issubclass(f, BaseSchema):
+            #We retrieve the fields of the schema and make them optional
             schema_fields = Optional_(*f.__fields)
             if isinstance(schema_fields, list):
                 new_fields.extend(schema_fields)
@@ -19,7 +21,11 @@ def Optional_(*fields: List[Union[Type, BaseSchema, list]]) -> Optional[TypeVar]
                 new_fields.append(schema_fields)
         
         elif isinstance(f, list):
-            new_fields.extend(Optional_(*f))
+            normal_fields = Optional_(*f)
+            if isinstance(normal_fields, list):
+                new_fields.extend(normal_fields)
+            else:
+                new_fields.append(normal_fields)
         else:
             new_fields.append(TypeVar(f"{f.__name__}", bound=Optional[f.__bound__]))
 
