@@ -2,7 +2,7 @@ from pydantic import PrivateAttr
 from typing import Optional, Type, TypeVar, List, Union
 from .base_schema import BaseSchema
 from .schema_attributes import SchemaAttributes
-from . import T
+from .t import T
 from sqlalchemy.orm import declarative_base
 
 def Optional_(*fields: Union[T, List[Type], Type[BaseSchema]]) -> Optional[TypeVar]:
