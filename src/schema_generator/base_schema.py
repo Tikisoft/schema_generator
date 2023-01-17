@@ -1,7 +1,7 @@
 from sqlalchemy_pydantic_orm import ORMBaseSchema
 from pydantic.fields import ModelField
-from typing import List, Optional, Dict, Type, TypeVar, TYPE_CHECKING, Union
-from .utils import get_inner, is_list, is_optional
+from typing import List, Optional, Dict, Type, TypeVar, TYPE_CHECKING, Union, TypeVar
+from .utils import get_inner, is_list, is_optional, is_union
 
 if TYPE_CHECKING:
     from schema_attributes import SchemaAttributes
@@ -121,14 +121,34 @@ class BaseSchema(ORMBaseSchema):
         type_ = get_inner(field)
         type_name = type_.__name__ if hasattr(type_, "__name__") else type_
 
+        #If field type is a string value
         if isinstance(get_inner(type_.__bound__), str):
 
+            #If method is mapped in 'mapping'
             if hasattr(cls._config_attributes, type_name) and cls._method in getattr(cls._config_attributes, type_name):
-                type_ = get_inner(type_.__bound__)+getattr(cls._config_attributes, type_name)[cls._method]
+                mapping_value = getattr(cls._config_attributes, type_name)[cls._method]
+                if type(mapping_value) == str:
+                    type_ = get_inner(type_.__bound__)+mapping_value
+                else:
+                    type_ = mapping_value
+            #If field is mapped in config
             elif cls._method in cls._config_attributes.mapping:
-                type_ = get_inner(type_.__bound__)+cls._config_attributes.mapping[cls._method]
+                mapping_value = cls._config_attributes.mapping[cls._method]
+                if type(mapping_value) == str:
+                    type_ = get_inner(type_.__bound__)+mapping_value
+                else:
+                    type_ = mapping_value
             else:
                 type_ = get_inner(type_.__bound__)+cls._method
+
+            if is_union(type_):
+                types = get_inner(type_)
+                for i in range(len(types)):
+                    if(isinstance(types[i], str)):
+                        t = field.__name__
+                        t = TypeVar(f"{t}", bound=get_inner(field.__bound__)+types[i])
+                        types[i] = t.__bound__
+                type_.__args__ = types
 
             if is_list(field.__bound__, True):
                 type_ = List[type_]
@@ -145,11 +165,18 @@ class BaseSchema(ORMBaseSchema):
         for _, cls in REFS.items():
             cls_refs = {}
             for field in cls.__fields__:
-                annotation_type = get_inner(cls.__fields__[field].type_)
-                if type(annotation_type) == str:
-                    if annotation_type in REFS:
-                        cls_refs[annotation_type] = REFS[annotation_type]
-                    else:
-                        print("Can't find reference of", annotation_type, "for attribute", field, "in", cls.__name__, "schema")
-            if cls_refs:
+                annotations_type = get_inner(cls.__fields__[field].type_)
+                if not isinstance(annotations_type, (str, list)):
+                    continue
+
+                if isinstance(annotations_type, str):
+                    annotations_type = [annotations_type]
+                    
+                for annotation_type in annotations_type:
+                    if isinstance(annotation_type, str):
+                        if annotation_type in REFS:
+                            cls_refs[annotation_type] = REFS[annotation_type]
+                        else:
+                            print("Can't find reference of", annotation_type, "for attribute", field, "in", cls.__name__, "schema")
+
                 cls.update_forward_refs(**cls_refs)

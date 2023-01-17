@@ -1,4 +1,4 @@
-from ..utils import is_list, get_inner, is_forward
+from ..utils import is_list, get_inner, is_forward, is_union
 from ..base_schema import BaseSchema
 import codecs
 from enum import Enum
@@ -26,8 +26,9 @@ def generate_html(*schemas, path="generated.html"):
         else:
             other_schemas.append(schema)
 
+        #Search enums
         for f in schema.__fields__:
-            if not is_forward(schema.__fields__[f].type_) and issubclass(schema.__fields__[f].type_, Enum):
+            if not is_forward(schema.__fields__[f].type_) and isinstance(schema.__fields__[f].type_, type) and issubclass(schema.__fields__[f].type_, Enum):
                 enum = schema.__fields__[f].type_
                 if enum not in enums:
                     enums.append(enum)
@@ -64,6 +65,37 @@ def section(name, id="section", full=False, class_="", children=[], inner=None):
     content += ("<div class='py-4'>" + inner + "</div>" if inner else "") + "</div>"
     return content
 
+def type_span(type_):
+    is_entity = is_forward(type_) or (isinstance(type_, type) and issubclass(type_, BaseModel)) or isinstance(type_, str)
+    is_enum = not is_entity and isinstance(type_, type) and issubclass(type_, Enum)
+    content = "<span>" 
+    if is_entity or is_enum:
+        if is_forward(type_):
+            href = get_inner(type_)
+        else:
+            href = type_.__name__ if not isinstance(type_, str) else type_
+        content += f"<a class='font-medium' href='#{href}'>{href}</a>" + (" (enum)" if is_enum else "")
+    elif is_union(type_):
+        content += "(" + "|".join([type_span(type_) for type_ in get_inner(type_)]) + ")"
+    else:
+        content += type_.__name__
+    content += "</span>"
+
+    return content
+
+def field_card(props):
+
+    content = props.name
+    if props.required:
+        content += "<span class='text-red-500'>*</span>"
+    content += ": "
+    content += type_span(props.type_)
+
+    type_ = props.outer_type_ if not hasattr(props.outer_type_, "__bound__") else props.outer_type_.__bound__
+    if is_list(type_):
+        content += "[]"
+    return f"<li class='ml-4'>{content}</li>"
+
 def schema_card(schema):
     color, nuance = "gray", 300
 
@@ -84,26 +116,7 @@ def schema_card(schema):
     content = "<ul>"
 
     for f in schema.__fields__:
-        props = schema.__fields__[f]
-        is_entity = is_forward(props.type_) or issubclass(props.type_, BaseModel)
-        is_enum = not is_entity and issubclass(props.type_, Enum)
-        attr = props.name
-        if props.required:
-            attr += "<span class='text-red-500'>*</span>"
-        attr += ": "
-        if is_entity or is_enum:
-            if is_forward(props.type_):
-                href = get_inner(props.type_)
-            else:
-                href = props.type_.__name__
-            attr += f"<a class='font-medium' href='#{href}'> {href}</a>" + (" (enum)" if is_enum else "")
-        else:
-            attr += props.type_.__name__
-
-        type_ = props.outer_type_ if not hasattr(props.outer_type_, "__bound__") else props.outer_type_.__bound__
-        if is_list(type_):
-            attr += "[]"
-        content += f"<li class='ml-4'>{attr}</li>"
+        content += field_card(schema.__fields__[f])
     content += "</ul>"
     
     return section(name+method, name+method, class_="mt-10", children=[badge(method if method != "" else "Schema", color, nuance)], inner=content)
