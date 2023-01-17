@@ -1,6 +1,6 @@
 from sqlalchemy_pydantic_orm import ORMBaseSchema
 from pydantic.fields import ModelField
-from typing import List, Optional, Dict, Type, TypeVar, TYPE_CHECKING, Union, TypeVar
+from typing import List, Optional, Dict, Type, TypeVar, TYPE_CHECKING, Union, TypeVar, ForwardRef
 from .utils import get_inner, is_list, is_optional, is_union
 
 if TYPE_CHECKING:
@@ -145,10 +145,9 @@ class BaseSchema(ORMBaseSchema):
                 types = get_inner(type_)
                 for i in range(len(types)):
                     if(isinstance(types[i], str)):
-                        t = field.__name__
-                        t = TypeVar(f"{t}", bound=get_inner(field.__bound__)+types[i])
-                        types[i] = t.__bound__
-                type_.__args__ = types
+                        types[i] = ForwardRef(get_inner(field.__bound__)+types[i])
+
+                type_ = Union[tuple(types)]
 
             if is_list(field.__bound__, True):
                 type_ = List[type_]
@@ -179,4 +178,4 @@ class BaseSchema(ORMBaseSchema):
                         else:
                             print("Can't find reference of", annotation_type, "for attribute", field, "in", cls.__name__, "schema")
 
-                cls.update_forward_refs(**cls_refs)
+            cls.update_forward_refs(**cls_refs)
