@@ -2,6 +2,8 @@ from typing import List, Type, TypeVar
 import types
 from .utils import get_inner
 from .t import T
+import re
+
 
 class SchemaAttributes:
     """
@@ -31,7 +33,7 @@ class SchemaAttributes:
         setattr(cls, "ALL", attributes)
         setattr(cls, "ENTITIES", entities)
 
-    
+
     class Config:
         """
         Allow to define a mapping for dynamic schemas, for example:\n
@@ -51,6 +53,17 @@ class SchemaAttributes:
         In this example, the schema for the team inside the schema UserPatch will be TeamCreate (instead of TeamPatch)\n
         """
 
-        mapping = {
-            "ReadAll": "Read"
+        @classmethod
+        def apply_default_mapping(cls, method_name):
+            for pattern, replacement in cls.default_mapping.items():
+                regex_pattern = re.compile(pattern.replace("*", ".*"))
+                if regex_pattern.match(method_name):
+                    return replacement
+            return method_name
+
+        default_mapping = {
+            "Read*": "Read",
+            "Patch*": "Patch",
+            "Create*": "Create"
         }
+        mapping = {}

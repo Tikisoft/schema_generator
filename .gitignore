@@ -5,3 +5,6 @@ venv/
 *.egg-info
 Makefile
 test.py
+.DS_Store
+.idea
+.src/.DS_Store
