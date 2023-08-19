@@ -61,9 +61,5 @@ class SchemaAttributes:
                     return replacement
             return method_name
 
-        default_mapping = {
-            "Read*": "Read",
-            "Patch*": "Patch",
-            "Create*": "Create"
-        }
+        default_mapping = {}
         mapping = {}
