@@ -8,17 +8,17 @@ if TYPE_CHECKING:
 
 REFS = {}
 
-class BaseSchema(ORMBaseSchema):
 
-    #Fields of the schema, for example [User.id, User.name]
+class BaseSchema(ORMBaseSchema):
+    # Fields of the schema, for example [User.id, User.name]
     __fields = []
-    #Name of the schema, for example "User"
+    # Name of the schema, for example "User"
     _name: str = None
-    #Method of the schema, for example "Read"
+    # Method of the schema, for example "Read"
     _method: str = None
-    #Config of the schema, it contains the maping of the attributes
+    # Config of the schema, it contains the maping of the attributes
     _config_attributes: "SchemaAttributes.Config" = None
-    #Validators
+    # Validators
     _verifiers: Dict = {}
 
     class Config:
@@ -35,7 +35,6 @@ class BaseSchema(ORMBaseSchema):
                     data[attr] = res
 
         super().__init__(**data)
-                
 
     def __init_subclass__(cls) -> None:
         cls.add_fields = lambda *fields: BaseSchema.__add_fields(cls, *fields)
@@ -47,9 +46,8 @@ class BaseSchema(ORMBaseSchema):
             REFS[cls.__name__] = cls
         return super().__init_subclass__()
 
-
-    #Add fields to the schema
-    @staticmethod   
+    # Add fields to the schema
+    @staticmethod
     def __add_fields(cls: Type["BaseSchema"], *fields: List[Union["BaseSchema", Type]]):
         for field in fields:
             if isinstance(field, list):
@@ -61,7 +59,7 @@ class BaseSchema(ORMBaseSchema):
             cls.__remove_fields(cls, field)
             setattr(cls, "__fields", [*getattr(cls, "__fields", []), field])
 
-    #Remove fields from the schema
+    # Remove fields from the schema
     @staticmethod
     def __remove_fields(cls: Type["BaseSchema"], *fields: List[Union["BaseSchema", Type]]):
         for field in fields:
@@ -79,13 +77,13 @@ class BaseSchema(ORMBaseSchema):
 
             setattr(cls, "__fields", fields)
 
-    #Generate the schema
+    # Generate the schema
     @staticmethod
     def __generate(cls: Type["BaseSchema"]):
         """
         Generate the fields and annotations of the schema.
         """
-        
+
         cls.__fields__.clear()
         cls.__annotations__.clear()
 
@@ -93,7 +91,6 @@ class BaseSchema(ORMBaseSchema):
         new_fields: Dict[str, ModelField] = {}
 
         for field in getattr(cls, "__fields", []):
-
             type_, type_name = cls.__get_field_type(cls, field)
 
             new_annotations[type_name] = type_
@@ -124,11 +121,12 @@ class BaseSchema(ORMBaseSchema):
         if isinstance(get_inner(type_.__bound__), str):
 
             if hasattr(cls._config_attributes, type_name) and cls._method in getattr(cls._config_attributes, type_name):
-                type_ = get_inner(type_.__bound__)+getattr(cls._config_attributes, type_name)[cls._method]
+                type_ = get_inner(type_.__bound__) + getattr(cls._config_attributes, type_name)[cls._method]
             elif cls._method in cls._config_attributes.mapping:
-                type_ = get_inner(type_.__bound__)+cls._config_attributes.mapping[cls._method]
+                type_ = get_inner(type_.__bound__) + cls._config_attributes.mapping[cls._method]
             else:
-                type_ = get_inner(type_.__bound__)+cls._method
+                inner_method = cls._config_attributes.apply_default_mapping(cls._method)
+                type_ = get_inner(type_.__bound__) + inner_method
 
             if is_list(field.__bound__, True):
                 type_ = List[type_]
@@ -150,6 +148,7 @@ class BaseSchema(ORMBaseSchema):
                     if annotation_type in REFS:
                         cls_refs[annotation_type] = REFS[annotation_type]
                     else:
-                        print("Can't find reference of", annotation_type, "for attribute", field, "in", cls.__name__, "schema")
+                        print("Can't find reference of", annotation_type, "for attribute", field, "in", cls.__name__,
+                              "schema")
             if cls_refs:
                 cls.update_forward_refs(**cls_refs)
